@@ -1,0 +1,43 @@
+# Build artifacts (rebuilt inside the image)
+node_modules
+dist
+
+# Secrets and runtime state
+.env
+.env.local
+.env.*.local
+store
+workspace
+agents
+reports
+.claude
+.config
+mcp-servers
+.mcp.json
+
+# Local databases / logs / pids
+*.db
+*.db-shm
+*.db-wal
+*.log
+*.pid
+
+# Backups + test artifacts
+backups
+test-results
+
+# Repo metadata + CI
+.git
+.github
+.gitignore
+
+# Heavy or docs-only assets not needed at runtime
+banner.png
+docs
+REBUILD_PROMPT*.md
+HEARTBEAT.md
+CLAUDE.md
+
+# macOS / Windows cruft
+.DS_Store
+Thumbs.db

@@ -1,0 +1,74 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: marveen-ollama
+    restart: unless-stopped
+    volumes:
+      - ollama-data:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # One-shot init container that pulls the embedding model marveen needs.
+  # Exits 0 when the model is in the local registry; re-runs are idempotent.
+  ollama-init:
+    image: ollama/ollama:latest
+    container_name: marveen-ollama-init
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: ollama:11434
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        if ollama list | awk '{print $$1}' | grep -qx 'nomic-embed-text:latest'; then
+          echo "nomic-embed-text already present"
+        else
+          echo "Pulling nomic-embed-text..."
+          ollama pull nomic-embed-text
+        fi
+    restart: "no"
+
+  marveen:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: marveen
+    restart: unless-stopped
+    depends_on:
+      ollama:
+        condition: service_healthy
+      ollama-init:
+        condition: service_completed_successfully
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      OLLAMA_URL: http://ollama:11434
+      MARVEEN_ENV: linux-server
+      WEB_HOST: 0.0.0.0
+      WEB_PORT: "3420"
+      # CLAUDE_CODE_OAUTH_TOKEN, TELEGRAM_BOT_TOKEN, ALLOWED_CHAT_ID,
+      # OWNER_NAME, DASHBOARD_TOKEN, HEARTBEAT_CALENDAR_ID, etc. come from
+      # .env (local dev) or the host's env-var injection (Xcloud panel).
+    ports:
+      - "3420:3420"
+    volumes:
+      - marveen-store:/app/store
+      - marveen-agents:/app/agents
+      - marveen-workspace:/app/workspace
+      - marveen-reports:/app/reports
+      - marveen-claude:/root/.claude
+
+volumes:
+  marveen-store:
+  marveen-agents:
+  marveen-workspace:
+  marveen-reports:
+  marveen-claude:
+  ollama-data:

@@ -1,0 +1,8 @@
+# Force LF line endings for files that run inside Linux containers.
+# Without this, core.autocrlf=true (default on Windows) checks out CRLF and
+# /bin/sh refuses to execute the script ("/usr/local/bin/entrypoint.sh: not
+# found" or similar opaque failures).
+*.sh        text eol=lf
+Dockerfile  text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
